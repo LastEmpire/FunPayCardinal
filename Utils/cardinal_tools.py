@@ -206,9 +206,7 @@ def load_old_users(greetings_cooldown: float) -> dict[int, float]:
         users = json.loads(users)
     except json.decoder.JSONDecodeError:
         return dict()
-    # todo убрать позже, конвертация для старых версий кардинала
-    if type(users) == list:
-        users = {user: time.time() for user in users}
+
     else:
         users = {int(user): time_ for user, time_ in users.items() if
                  time.time() - time_ < greetings_cooldown * 24 * 60 * 60}

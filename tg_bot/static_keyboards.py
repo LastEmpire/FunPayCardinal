@@ -35,7 +35,6 @@ def SETTINGS_SECTIONS_2() -> K:
         .add(B(_("mm_blacklist"), callback_data=f"{CBT.CATEGORY}:bl")) \
         .add(B(_("mm_configs"), callback_data=CBT.CONFIG_LOADER)) \
         .add(B(_("mm_authorized_users"), callback_data=f"{CBT.AUTHORIZED_USERS}:0")) \
-        .add(B(_("mm_proxy"), callback_data=f"{CBT.PROXY}:0")) \
         .add(B(_("gl_back"), callback_data=CBT.MAIN))
 
 
@@ -61,7 +60,6 @@ def CONFIGS_UPLOADER() -> K:
         .add(B(_("cfg_download_main"), callback_data=f"{CBT.DOWNLOAD_CFG}:main")) \
         .add(B(_("cfg_download_ar"), callback_data=f"{CBT.DOWNLOAD_CFG}:autoResponse")) \
         .add(B(_("cfg_download_ad"), callback_data=f"{CBT.DOWNLOAD_CFG}:autoDelivery")) \
-        .add(B(_("cfg_upload_main"), callback_data="upload_main_config")) \
         .add(B(_("cfg_upload_ar"), callback_data="upload_auto_response_config")) \
         .add(B(_("cfg_upload_ad"), callback_data="upload_auto_delivery_config")) \
         .add(B(_("gl_back"), callback_data=CBT.MAIN2))

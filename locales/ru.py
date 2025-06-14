@@ -215,26 +215,13 @@ fpc_init = """✅ <b><u>FunPay Cardinal инициализирован!</u></b>\
 ℹ️ <b><i>Версия:</i></b> <code>{}</code>
 👑 <b><i>Аккаунт:</i></b>  <code>{}</code> | <code>{}</code>
 💰 <b><i>Баланс:</i></b> <code>{}₽, {}$, {}€</code>
-📊 <b><i>Активные заказы:</i></b>  <code>{}</code>
-
-💬 <b><i>Telegram чат:</i></b> @funpay_cardinal
-🔄 <b><i>Обновления:</i></b> @fpc_updates
-🧩 <b><i>Плагины:</i></b> @fpc_plugins
-👨‍💻 <b><i>Разработчик:</i></b> @woopertail, @sidor0912
-🤑 <b><i>Донат:</i></b> @sidor_donate"""
+📊 <b><i>Активные заказы:</i></b>  <code>{}</code>"""
 
 create_test_ad_key = "Введи название лота, авто-выдачу которого ты хочешь протестировать."
 
 test_ad_key_created = """✅ Создан одноразовый ключ для выдачи <code>{}</code>.\n
 Отправь команду снизу в чат с пользователем, которому хочешь выдать товар.\n
 <code>!автовыдача {}</code>"""
-
-about = """<b>🐦 FunPay Cardinal 🐦 v{}</b>\n
-<i>Telegram чат:</i> @funpay_cardinal
-<i>Обновления:</i> @fpc_updates
-<i>Плагины:</i> @fpc_plugins
-<i>Разработчик:</i> @woopertail, @sidor0912
-<i>Донат:</i> @sidor_donate"""
 
 sys_info = """<b><u>Сводка данных</u></b>
 
@@ -412,7 +399,7 @@ pl_new = "Отправь мне плагин.\n\n<b>⚠️ ВНИМАНИЕ! З�
 
 au_user_settings = "Настройки для пользователя {}"
 adv_fpc = "😎 FunPay Cardinal - лучший бот для FunPay"
-adv_description = """🐦 𝑭𝒖𝒏𝑷𝒂𝒚 𝑪𝒂𝒓𝒅𝒊𝒏𝒂𝒍 v{}🐦
+adv_description = """🐦 FunPay Cardinal v{}🐦
 
 🤖 Автовыдача товаров
 🚀 Автоподнятие лотов
@@ -425,12 +412,7 @@ adv_description = """🐦 𝑭𝒖𝒏𝑷𝒂𝒚 𝑪𝒂𝒓𝒅𝒊𝒏𝒂�
 🧩 Плагины
 🌟 И многое другое...
 
-🛠️ Сделано с помощью: github.com/sidor0912/FunPayCardinal
-👨‍💻 Автор: @woopertail, @sidor0912
-💰 Донат: @sidor_donate
-🔄 Обновления: @fpc_updates
-🧩 Плагины: @fpc_plugins
-💬 Чат: @funpay_cardinal"""
+🛠️ Сделано с помощью: {}"""
 
 # - Описания меню
 desc_main = "Выбери категорию настроек."

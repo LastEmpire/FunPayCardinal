@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from configparser import ConfigParser
 
 from tg_bot import auto_response_cp, config_loader_cp, auto_delivery_cp, templates_cp, plugins_cp, file_uploader, \
-    authorized_users_cp, proxy_cp, default_cp
+    authorized_users_cp, default_cp
 from types import ModuleType
 import Utils.exceptions
 from uuid import UUID
@@ -25,7 +25,6 @@ import os
 from pip._internal.cli.main import main
 import FunPayAPI
 import handlers
-import announcements
 from locales.localizer import Localizer
 from FunPayAPI import utils as fp_utils
 from Utils import cardinal_tools
@@ -632,14 +631,13 @@ class Cardinal(object):
         получает данные аккаунта и профиля.
         """
         self.add_handlers_from_plugin(handlers)
-        self.add_handlers_from_plugin(announcements)
         self.load_plugins()
         self.add_handlers()
 
         if self.MAIN_CFG["Telegram"].getboolean("enabled"):
             self.__init_telegram()
             for module in [auto_response_cp, auto_delivery_cp, config_loader_cp, templates_cp, plugins_cp,
-                           file_uploader, authorized_users_cp, proxy_cp, default_cp]:
+                           file_uploader, authorized_users_cp, default_cp]:
                 self.add_handlers_from_plugin(module)
 
         self.run_handlers(self.pre_init_handlers, (self,))
@@ -648,15 +646,6 @@ class Cardinal(object):
             self.telegram.setup_commands()
             try:
                 self.telegram.edit_bot()
-            except AttributeError:  # todo убрать когда-то
-                logger.warning("Произошла ошибка при изменении бота Telegram. Обновляю библиотеку...")
-                logger.debug("TRACEBACK", exc_info=True)
-                try:
-                    main(["install", "-U", "pytelegrambotapi==4.15.2"])
-                    logger.info("Библиотека обновлена.")
-                except:
-                    logger.warning("Произошла ошибка при обновлении библиотеки.")
-                    logger.debug("TRACEBACK", exc_info=True)
             except:
                 logger.warning("Произошла ошибка при изменении бота Telegram.")
                 logger.debug("TRACEBACK", exc_info=True)

@@ -104,7 +104,7 @@ LOGGER_CONFIG = {
             "formatter": "file_formatter",
             "filename": "logs/log.log",
             "maxBytes": 20 * 1024 * 1024,  # 20 мегабайт в байтах
-            "backupCount": 25,  # Сколько ротаций оставить
+            "backupCount": 5,  # Сколько ротаций оставить
             "encoding": "utf-8"
         },
 

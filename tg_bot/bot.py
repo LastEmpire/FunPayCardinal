@@ -13,20 +13,16 @@ from tg_bot.utils import NotificationTypes
 if TYPE_CHECKING:
     from cardinal import Cardinal
 
-import os
-import sys
 import time
 import random
 import string
-import psutil
 import telebot
 from telebot.apihelper import ApiTelegramException
 import logging
 
-from telebot.types import InlineKeyboardMarkup as K, InlineKeyboardButton as B, Message, CallbackQuery, BotCommand, \
-    InputFile
+from telebot.types import InlineKeyboardMarkup as K, InlineKeyboardButton as B, Message, CallbackQuery, BotCommand
 from tg_bot import utils, static_keyboards as skb, keyboards as kb, CBT
-from Utils import cardinal_tools, updater
+from Utils import cardinal_tools
 from locales.localizer import Localizer
 
 logger = logging.getLogger("TGBot")
@@ -72,8 +68,6 @@ class TGBot:
             "menu": "cmd_menu",
             "profile": "cmd_profile",
             "restart": "cmd_restart",
-            "check_updates": "cmd_check_updates",
-            "update": "cmd_update",
             "golden_key": "cmd_golden_key",
             "ban": "cmd_ban",
             "unban": "cmd_unban",
@@ -82,13 +76,6 @@ class TGBot:
             "upload_offer_img": "cmd_upload_offer_img",
             "upload_plugin": "cmd_upload_plugin",
             "test_lot": "cmd_test_lot",
-            "logs": "cmd_logs",
-            "about": "cmd_about",
-            "sys": "cmd_sys",
-            "get_backup": "cmd_get_backup",
-            "create_backup": "cmd_create_backup",
-            "del_logs": "cmd_del_logs",
-            "power_off": "cmd_power_off",
             "watermark": "cmd_watermark",
         }
         self.__default_notification_settings = {
@@ -305,7 +292,7 @@ class TGBot:
         else:
             self.attempts[m.from_user.id] = self.attempts.get(m.from_user.id, 0) + 1
             text = _("access_denied", m.from_user.username, language=lang)
-            kb_links = kb.LINKS_KB(language=lang)
+            kb_links = kb.links_kb(self.cardinal, language=lang)
             logger.warning(_("log_access_attempt", m.from_user.username, m.from_user.id))
         self.bot.send_message(m.chat.id, text, reply_markup=kb_links)
 
@@ -487,148 +474,16 @@ class TGBot:
         if re.fullmatch(r"\[[a-zA-Z]+]", watermark):
             self.bot.reply_to(m, _("watermark_error"))
             return
-        preview = f"<a href=\"https://sfunpay.com/s/chat/zb/wl/zbwl4vwc8cc1wsftqnx5.jpg\">⁢</a>" if not \
-            any([i.lower() in watermark.lower() for i in ("🐦", "FPC", "𝑭𝑷𝑪", "𝑪𝒂𝒓𝒅𝒊𝒏𝒂𝒍", "Cardinal", "Кардинал")]) else \
-            f"<a href=\"https://sfunpay.com/s/chat/kd/8i/kd8isyquw660kcueck3g.jpg\">⁢</a>"
+
         self.cardinal.MAIN_CFG["Other"]["watermark"] = watermark
         self.cardinal.save_config(self.cardinal.MAIN_CFG, "configs/_main.cfg")
         if watermark:
             logger.info(_("log_watermark_changed", m.from_user.username, m.from_user.id, watermark))
-            self.bot.reply_to(m, preview + _("watermark_changed", watermark))
+            self.bot.reply_to(m, _("watermark_changed", watermark))
         else:
             logger.info(_("log_watermark_deleted", m.from_user.username, m.from_user.id))
-            self.bot.reply_to(m, preview + _("watermark_deleted"))
+            self.bot.reply_to(m, _("watermark_deleted"))
 
-    def send_logs(self, m: Message):
-        """
-        Отправляет файл логов.
-        """
-        if not os.path.exists("logs/log.log"):
-            self.bot.send_message(m.chat.id, _("logfile_not_found"))
-        else:
-            self.bot.send_message(m.chat.id, _("logfile_sending"))
-            try:
-                with open("logs/log.log", "r", encoding="utf-8") as f:
-                    self.bot.send_document(m.chat.id, f,
-                                           caption=f'{_("gs_old_msg_mode").replace("{} ", "") if self.cardinal.old_mode_enabled else ""}')
-                    f.seek(0)
-                    file_content = f.read()
-                    if "TRACEBACK" in file_content:
-                        file_content, right = file_content.rsplit("TRACEBACK", 1)
-                        file_content = "\n[".join(file_content.rsplit("\n[", 2)[-2:])
-                        right = right.split("\n[", 1)[0]  # locale
-                        result = f"<b>Текст последней ошибки:</b>\n\n[{utils.escape(file_content)}TRACEBACK{utils.escape(right)}"
-                        while result:
-                            text, result = result[:4096], result[4096:]
-                            self.bot.send_message(m.chat.id, text)
-                            time.sleep(0.5)
-                    else:
-                        self.bot.send_message(m.chat.id, "<b>Ошибок в последнем лог-файле не обнаружено.</b>")  # locale
-            except:
-                logger.debug("TRACEBACK", exc_info=True)
-                self.bot.send_message(m.chat.id, _("logfile_error"))
-
-    def del_logs(self, m: Message):
-        """
-        Удаляет старые лог-файлы.
-        """
-        logger.info(
-            f"[IMPORTANT] Удаляю логи по запросу пользователя $MAGENTA@{m.from_user.username} (id: {m.from_user.id})$RESET.")
-        deleted = 0  # locale
-        for file in os.listdir("logs"):
-            if not file.endswith(".log"):
-                try:
-                    os.remove(f"logs/{file}")
-                    deleted += 1
-                except:
-                    continue
-        self.bot.send_message(m.chat.id, _("logfile_deleted").format(deleted))
-
-    def about(self, m: Message):
-        """
-        Отправляет информацию о текущей версии бота.
-        """
-        self.bot.send_message(m.chat.id, _("about", self.cardinal.VERSION))
-
-    def check_updates(self, m: Message):
-        curr_tag = f"v{self.cardinal.VERSION}"
-        releases = updater.get_new_releases(curr_tag)
-        if isinstance(releases, int):
-            errors = {
-                1: ["update_no_tags", ()],
-                2: ["update_lasted", (curr_tag,)],
-                3: ["update_get_error", ()],
-            }
-            self.bot.send_message(m.chat.id, _(errors[releases][0], *errors[releases][1]))
-            return
-        for release in releases:
-            self.bot.send_message(m.chat.id, _("update_available", release.name, release.description))
-            time.sleep(1)
-        self.bot.send_message(m.chat.id, _("update_update"))
-
-    def get_backup(self, m: Message):
-        logger.info(
-            f"[IMPORTANT] Получаю бэкап по запросу пользователя $MAGENTA@{m.from_user.username} (id: {m.from_user.id})$RESET.")
-        if os.path.exists("backup.zip"):  # locale
-            with open(file_path := "backup.zip", 'rb') as file:
-                modification_time = os.path.getmtime(file_path)
-                formatted_time = time.strftime('%d.%m.%Y %H:%M:%S', time.localtime(modification_time))
-                self.bot.send_document(chat_id=m.chat.id, document=InputFile(file),
-                                       caption=f'{_("update_backup")}\n\n{formatted_time}')
-        else:
-            self.bot.send_message(m.chat.id, _("update_backup_not_found"))
-
-    def create_backup(self, m: Message):
-        if updater.create_backup():
-            self.bot.send_message(m.chat.id, _("update_backup_error"))
-            return False
-        self.get_backup(m)
-        return True
-
-    def update(self, m: Message):
-        curr_tag = f"v{self.cardinal.VERSION}"
-        releases = updater.get_new_releases(curr_tag)
-        if isinstance(releases, int):
-            errors = {
-                1: ["update_no_tags", ()],
-                2: ["update_lasted", (curr_tag,)],
-                3: ["update_get_error", ()],
-            }
-            self.bot.send_message(m.chat.id, _(errors[releases][0], *errors[releases][1]))
-            return
-
-        if not self.create_backup(m):
-            return
-        release = releases[-1]
-        if updater.download_zip(release.sources_link) \
-                or (release_folder := updater.extract_update_archive()) == 1:
-            self.bot.send_message(m.chat.id, _("update_download_error"))
-            return
-        self.bot.send_message(m.chat.id, _("update_downloaded").format(release.name, str(len(releases) - 1)))
-
-        if updater.install_release(release_folder):
-            self.bot.send_message(m.chat.id, _("update_install_error"))
-            return
-
-        if getattr(sys, 'frozen', False):
-            self.bot.send_message(m.chat.id, _("update_done_exe"))
-        else:
-            self.bot.send_message(m.chat.id, _("update_done"))
-
-    def send_system_info(self, m: Message):
-        """
-        Отправляет информацию о нагрузке на систему.
-        """
-        current_time = int(time.time())
-        uptime = current_time - self.cardinal.start_time
-
-        ram = psutil.virtual_memory()
-        cpu_usage = "\n".join(
-            f"    CPU {i}:  <code>{l}%</code>" for i, l in enumerate(psutil.cpu_percent(percpu=True)))
-        self.bot.send_message(m.chat.id, _("sys_info", cpu_usage, psutil.Process().cpu_percent(),
-                                           ram.total // 1048576, ram.used // 1048576, ram.free // 1048576,
-                                           psutil.Process().memory_info().rss // 1048576,
-                                           cardinal_tools.time_to_str(uptime), m.chat.id))
 
     def restart_cardinal(self, m: Message):
         """
@@ -637,41 +492,6 @@ class TGBot:
         self.bot.send_message(m.chat.id, _("restarting"))
         cardinal_tools.restart_program()
 
-    def ask_power_off(self, m: Message):
-        """
-        Просит подтверждение на отключение FPC.
-        """
-        self.bot.send_message(m.chat.id, _("power_off_0"), reply_markup=kb.power_off(self.cardinal.instance_id, 0))
-
-    def cancel_power_off(self, c: CallbackQuery):
-        """
-        Отменяет выключение (удаляет клавиатуру с кнопками подтверждения).
-        """
-        self.bot.edit_message_text(_("power_off_cancelled"), c.message.chat.id, c.message.id)
-        self.bot.answer_callback_query(c.id)
-
-    def power_off(self, c: CallbackQuery):
-        """
-        Отключает FPC.
-        """
-        split = c.data.split(":")
-        state = int(split[1])
-        instance_id = int(split[2])
-
-        if instance_id != self.cardinal.instance_id:
-            self.bot.edit_message_text(_("power_off_error"), c.message.chat.id, c.message.id)
-            self.bot.answer_callback_query(c.id)
-            return
-
-        if state == 6:
-            self.bot.edit_message_text(_("power_off_6"), c.message.chat.id, c.message.id)
-            self.bot.answer_callback_query(c.id)
-            cardinal_tools.shut_down()
-            return
-
-        self.bot.edit_message_text(_(f"power_off_{state}"), c.message.chat.id, c.message.id,
-                                   reply_markup=kb.power_off(instance_id, state))
-        self.bot.answer_callback_query(c.id)
 
     # Чат FunPay
     def act_send_funpay_message(self, c: CallbackQuery):
@@ -1024,11 +844,6 @@ class TGBot:
         """
         self.bot.answer_callback_query(c.id, _("param_disabled"), show_alert=True)
 
-    def send_announcements_kb(self, m: Message):
-        """
-        Отправляет сообщение с клавиатурой управления уведомлениями о новых объявлениях.
-        """
-        self.bot.send_message(m.chat.id, _("desc_an"), reply_markup=kb.announcements_settings(self.cardinal, m.chat.id))
 
     def send_review_reply_text(self, c: CallbackQuery):
         stars = int(c.data.split(":")[1])
@@ -1049,23 +864,13 @@ class TGBot:
         self.bot.send_message(c.message.chat.id, _("old_mode_help"))
 
     def empty_callback(self, c: CallbackQuery):
-        self.bot.answer_callback_query(c.id, "🤑 @sidor_donate 🤑")
+        self.bot.answer_callback_query(c.id, "...")
 
     def switch_lang(self, c: CallbackQuery):
         lang = c.data.split(":")[1]
         Localizer(lang)
         self.cardinal.MAIN_CFG["Other"]["language"] = lang
         self.cardinal.save_config(self.cardinal.MAIN_CFG, "configs/_main.cfg")
-        if localizer.current_language == "en":
-            self.bot.answer_callback_query(c.id, "The translation may be incomplete and contain errors.\n\n"
-                                                 "If you find errors in the translation, let @sidor0912 know.\n\n"
-                                                 "Thank you :)", show_alert=True)
-        elif localizer.current_language == "uk":
-            self.bot.answer_callback_query(c.id, "Переклад складено за допомогою ChatGPT.\n"
-                                                 "Повідомте @sidor0912, якщо знайдете помилки.", show_alert=True)
-        elif localizer.current_language == "ru":
-            self.bot.answer_callback_query(c.id, '«А я сейчас вам покажу, откуда на Беларусь готовилось нападение»',
-                                           show_alert=True)
         c.data = f"{CBT.CATEGORY}:lang"
         self.open_settings_section(c)
 
@@ -1111,17 +916,7 @@ class TGBot:
         self.msg_handler(self.act_edit_watermark, commands=["watermark"])
         self.msg_handler(self.edit_watermark,
                          func=lambda m: self.check_state(m.chat.id, m.from_user.id, CBT.EDIT_WATERMARK))
-        self.msg_handler(self.send_logs, commands=["logs"])
-        self.msg_handler(self.del_logs, commands=["del_logs"])
-        self.msg_handler(self.about, commands=["about"])
-        self.msg_handler(self.check_updates, commands=["check_updates"])
-        self.msg_handler(self.update, commands=["update"])
-        self.msg_handler(self.get_backup, commands=["get_backup"])
-        self.msg_handler(self.create_backup, commands=["create_backup"])
-        self.msg_handler(self.send_system_info, commands=["sys"])
         self.msg_handler(self.restart_cardinal, commands=["restart"])
-        self.msg_handler(self.ask_power_off, commands=["power_off"])
-        self.msg_handler(self.send_announcements_kb, commands=["announcements"])
         self.cbq_handler(self.send_review_reply_text, lambda c: c.data.startswith(f"{CBT.SEND_REVIEW_REPLY_TEXT}:"))
 
         self.cbq_handler(self.act_send_funpay_message, lambda c: c.data.startswith(f"{CBT.SEND_FP_MESSAGE}:"))
@@ -1138,8 +933,6 @@ class TGBot:
         self.cbq_handler(self.open_settings_section, lambda c: c.data.startswith(f"{CBT.CATEGORY}:"))
         self.cbq_handler(self.switch_param, lambda c: c.data.startswith(f"{CBT.SWITCH}:"))
         self.cbq_handler(self.switch_chat_notification, lambda c: c.data.startswith(f"{CBT.SWITCH_TG_NOTIFICATIONS}:"))
-        self.cbq_handler(self.power_off, lambda c: c.data.startswith(f"{CBT.SHUT_DOWN}:"))
-        self.cbq_handler(self.cancel_power_off, lambda c: c.data == CBT.CANCEL_SHUTTING_DOWN)
         self.cbq_handler(self.cancel_action, lambda c: c.data == CBT.CLEAR_STATE)
         self.cbq_handler(self.send_old_mode_help_text, lambda c: c.data == CBT.OLD_MOD_HELP)
         self.cbq_handler(self.empty_callback, lambda c: c.data == CBT.EMPTY)
@@ -1213,28 +1006,13 @@ class TGBot:
         """
         Изменяет описания и название бота.
         """
-
-        name = self.bot.get_me().full_name
-        limit = 64
-        add_to_name = ["FunPay Bot | Бот ФанПей", "FunPay Bot", "FunPayBot", "FunPay"]
-        new_name = name
-        if "vertex" in new_name.lower():
-            new_name = ""
-        new_name = new_name.split("ㅤ")[0].strip()
-        if "funpay" not in new_name.lower():
-            for m_name in add_to_name:
-                if len(new_name) + 2 + len(m_name) <= limit:
-                    new_name = f"{(new_name + ' ').ljust(limit - len(m_name) - 1, 'ㅤ')} {m_name}"
-                    break
-            if new_name != name:
-                self.bot.set_my_name(new_name)
-        sh_text = "🛠️ github.com/sidor0912/FunPayCardinal 💰 @sidor_donate 👨‍💻 @sidor0912 🧩 @fpc_plugins 🔄 @fpc_updates 💬 @funpay_cardinal"
+        sh_text = f"🛠️ {self.cardinal.MAIN_CFG['Other']['projectLink']}"
         res = self.bot.get_my_short_description().short_description
         if res != sh_text:
             self.bot.set_my_short_description(sh_text)
         for i in [None, *localizer.languages.keys()]:
             res = self.bot.get_my_description(i).description
-            text = _("adv_description", self.cardinal.VERSION, language=i)
+            text = _("adv_description", self.cardinal.VERSION, self.cardinal.MAIN_CFG['Other']['projectLink'] language=i)
             if res != text:
                 self.bot.set_my_description(text, language_code=i)
 

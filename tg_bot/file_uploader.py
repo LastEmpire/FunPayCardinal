@@ -65,6 +65,8 @@ def download_file(tg: TGBot, msg: types.Message, file_name: str = "temp_file.txt
 
     :return: True, если все ок, False, при ошибке.
     """
+    assert msg.document, "Message does not contain a document."
+    
     tg.bot.send_message(msg.chat.id, "⏬ Загружаю файл...")
     try:
         file_info = tg.bot.get_file(msg.document.file_id)
@@ -81,6 +83,8 @@ def download_file(tg: TGBot, msg: types.Message, file_name: str = "temp_file.txt
 
 
 def init_uploader(cardinal: Cardinal):
+    assert cardinal.telegram is not None, "TG Bot is disabled"
+    
     tg = cardinal.telegram
     bot = tg.bot
 
@@ -94,6 +98,8 @@ def init_uploader(cardinal: Cardinal):
         """
         Загружает файл с товарами.
         """
+        assert m.document, "Message does not contain a document."
+        
         tg.clear_state(m.chat.id, m.from_user.id, True)
         if not check_file(tg, m, type_="txt"):
             return
@@ -121,45 +127,6 @@ def init_uploader(cardinal: Cardinal):
                          f"Товаров в файле: <code>{products_count}.</code>",
                          reply_markup=keyboard)
 
-    def act_upload_main_config(c: types.CallbackQuery):
-        result = bot.send_message(c.message.chat.id, "Отправьте мне основной конфиг.",
-                                  reply_markup=CLEAR_STATE_BTN())
-        tg.set_state(c.message.chat.id, result.id, c.from_user.id, "upload_main_config")
-        bot.answer_callback_query(c.id)
-
-    def upload_main_config(m: types.Message):
-        """
-        Загружает и проверяет основной конфиг.
-        """
-        tg.clear_state(m.chat.id, m.from_user.id, True)
-        if not check_file(tg, m, type_="cfg"):
-            return
-        if not download_file(tg, m, "temp_main.cfg"):
-            return
-
-        bot.send_message(m.chat.id, "🔁 Проверяю валидность файла...")
-        try:
-            new_config = cfg_loader.load_main_config("storage/cache/temp_main.cfg")
-        except excs.ConfigParseError as e:
-            bot.send_message(m.chat.id, f"❌ Произошла ошибка при обработке основного конфига: "
-                                        f"<code>{utils.escape(str(e))}</code>")
-            return
-        except UnicodeDecodeError:
-            bot.send_message(m.chat.id,
-                             "Произошла ошибка при расшифровке <code>UTF-8</code>. Убедитесь, что кодировка "
-                             "файла = <code>UTF-8</code>, а формат конца строк = <code>LF</code>.")
-            return
-        except:
-            bot.send_message(m.chat.id, "❌ Произошла ошибка при проверке конфига автовыдачи.")
-            logger.debug("TRACEBACK", exc_info=True)
-            return
-
-        cardinal.save_config(new_config, "configs/_main.cfg")
-        logger.info(f"Пользователь $MAGENTA@{m.from_user.username} (id: {m.from_user.id})$RESET "
-                    f"загрузил в бота основной конфиг.")
-        bot.send_message(m.chat.id, "✅ Основной конфиг успешно загружен. \n"
-                                    "Необходимо перезагрузить бота, что бы применить изменения. \n"
-                                    "Любое изменение основного конфига через переключатели на ПУ отменит все изменения.")
 
     def act_upload_auto_response_config(c: types.CallbackQuery):
         result = bot.send_message(c.message.chat.id, "Отправьте мне конфиг автоответчика.",
@@ -242,27 +209,11 @@ def init_uploader(cardinal: Cardinal):
                     f"загрузил в бота и установил конфиг автовыдачи.")
         bot.send_message(m.chat.id, "✅ Конфиг автовыдачи успешно применен.")
 
-    def upload_plugin(m: types.Message):
-        offset = tg.get_state(m.chat.id, m.from_user.id)["data"]["offset"]
-        tg.clear_state(m.chat.id, m.from_user.id, True)
-        if not check_file(tg, m, type_="py"):
-            return
-        if not download_file(tg, m, f"{utils.escape(m.document.file_name)}",
-                             custom_path=f"plugins"):
-            return
-
-        logger.info(f"[IMPORTANT] Пользователь $MAGENTA@{m.from_user.username} (id: {m.from_user.id})$RESET "
-                    f"загрузил в бота плагин $YELLOWplugins/{m.document.file_name}$RESET.")
-
-        keyboard = types.InlineKeyboardMarkup() \
-            .add(Button("◀️Назад", callback_data=f"{CBT.PLUGINS_LIST}:{offset}"))
-        bot.send_message(m.chat.id,
-                         f"✅ Плагин <code>{utils.escape(m.document.file_name)}</code> успешно загружен.\n\n"
-                         f"⚠️Чтобы плагин активировался, <u><b>перезагрузите FPC!</b></u> (/restart)",
-                         reply_markup=keyboard)
-
     def send_funpay_image(m: types.Message):
-        data = tg.get_state(m.chat.id, m.from_user.id)["data"]
+        state = tg.get_state(m.chat.id, m.from_user.id)
+        assert state is not None, "State not found for user"
+        data = state["data"]
+        
         chat_id, username = data["node_id"], data["username"]
         tg.clear_state(m.chat.id, m.from_user.id, True)
         if not m.photo:
@@ -277,7 +228,8 @@ def init_uploader(cardinal: Cardinal):
         try:
             file_info = tg.bot.get_file(photo.file_id)
             file = tg.bot.download_file(file_info.file_path)
-            image_id = cardinal.account.upload_image(file, type_="chat")
+            
+            image_id = cardinal.account.upload_image(file, type_="chat") # type: ignore
             result = cardinal.account.send_message(chat_id, None, username, image_id)
             if not result:
                 tg.bot.reply_to(m, f'❌ Не удалось отправить сообщение в переписку '
@@ -309,7 +261,7 @@ def init_uploader(cardinal: Cardinal):
         try:
             file_info = tg.bot.get_file(photo.file_id)
             file = tg.bot.download_file(file_info.file_path)
-            image_id = cardinal.account.upload_image(file, type_=type_)
+            image_id = cardinal.account.upload_image(file, type_=type_) # type: ignore
         except:
             tg.bot.reply_to(m, f'❌ Не удалось отправить выгрузить изображение. '
                                f'Подробнее в файле <code>logs/log.log</code>')
@@ -332,13 +284,10 @@ def init_uploader(cardinal: Cardinal):
     tg.cbq_handler(act_upload_products_file, lambda c: c.data == CBT.UPLOAD_PRODUCTS_FILE)
     tg.cbq_handler(act_upload_auto_response_config, lambda c: c.data == "upload_auto_response_config")
     tg.cbq_handler(act_upload_auto_delivery_config, lambda c: c.data == "upload_auto_delivery_config")
-    tg.cbq_handler(act_upload_main_config, lambda c: c.data == "upload_main_config")
 
     tg.file_handler(CBT.UPLOAD_PRODUCTS_FILE, upload_products_file)
     tg.file_handler("upload_auto_response_config", upload_auto_response_config)
     tg.file_handler("upload_auto_delivery_config", upload_auto_delivery_config)
-    tg.file_handler("upload_main_config", upload_main_config)
-    tg.file_handler(CBT.UPLOAD_PLUGIN, upload_plugin)
     tg.file_handler(CBT.SEND_FP_MESSAGE, send_funpay_image)
     tg.file_handler(CBT.UPLOAD_CHAT_IMAGE, upload_chat_image)
     tg.file_handler(CBT.UPLOAD_OFFER_IMAGE, upload_offer_image)

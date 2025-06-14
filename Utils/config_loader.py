@@ -144,7 +144,8 @@ def load_main_config(config_path: str):
         "Other": {
             "watermark": "any+empty",
             "requestsDelay": [str(i) for i in range(1, 101)],
-            "language": ["ru", "en", "uk"]
+            "language": ["ru", "en", "uk"],
+            "projectLink": "any"
         }
     }
 

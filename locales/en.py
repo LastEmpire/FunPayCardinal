@@ -214,26 +214,13 @@ fpc_init = """✅ <b><u>FunPay Cardinal initialized!</u></b>\n
 ℹ️ <b><i>Version:</i></b> <code>{}</code>
 👑 <b><i>Account:</i></b>  <code>{}</code> | <code>{}</code>
 💰 <b><i>Balance:</i></b> <code>{}₽, {}$, {}€</code>
-📊 <b><i>Active orders:</i></b>  <code>{}</code>
-
-💬 <b><i>Telegram chat:</i></b> @funpay_cardinal
-🔄 <b><i>Updates:</i></b> @fpc_updates
-🧩 <b><i>Plugins:</i></b> @fpc_plugins
-👨‍💻 <b><i>Developer:</i></b> @woopertail, @sidor0912
-🤑 <b><i>Donate:</i></b> @sidor_donate"""
+📊 <b><i>Active orders:</i></b>  <code>{}</code"""
 
 create_test_ad_key = "Enter the name of the lot whose auto-delivery you want to test."
 
 test_ad_key_created = """✅ A one-time key for <code>{}</code> delivery has been created.\n
 Send the command from below to chat with the user to whom you want to deliver the item.\n
 <code>!автовыдача {}</code>"""
-
-about = """<b>🐦 FunPay Cardinal 🐦 v{}</b>\n
-<i>Telegram chat:</i> @funpay_cardinal
-<i>Updates:</i> @fpc_updates
-<i>Plugins:</i> @fpc_plugins
-<i>Developer:</i> @woopertail, @sidor0912
-<i>Donate:</i> @sidor_donate"""
 
 sys_info = """<b><u>Data summary</u></b>
 
@@ -423,12 +410,7 @@ adv_description = """🐦 FunPay Cardinal v{}🐦
 🧩 Plugins
 🌟 And much more...
 
-🛠️ Made with: github.com/sidor0912/FunPayCardinal
-👨‍💻 Author: @woopertail, @sidor0912
-💰 Donate: @sidor_donate
-🔄 Updates: @fpc_updates
-🧩 Plugins: @fpc_plugins
-💬 Chat: @funpay_cardinal"""
+🛠️ Made with: {}"""
 
 # - Menus desc
 desc_main = "Select a settings category."

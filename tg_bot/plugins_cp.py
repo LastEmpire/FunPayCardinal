@@ -25,6 +25,8 @@ _ = localizer.translate
 
 
 def init_plugins_cp(cardinal: Cardinal, *args):
+    assert cardinal.telegram is not None, "TG Bot is disabled"
+    
     tg = cardinal.telegram
     bot = tg.bot
 
@@ -62,7 +64,7 @@ def init_plugins_cp(cardinal: Cardinal, *args):
         split = c.data.split(":")
         uuid, offset = split[1], int(split[2])
 
-        if not check_plugin_exists(uuid, c.message):
+        if not check_plugin_exists(uuid, c.message): # type: ignore
             bot.answer_callback_query(c.id)
             return
 
@@ -85,7 +87,7 @@ def init_plugins_cp(cardinal: Cardinal, *args):
         split = c.data.split(":")
         uuid, offset = split[1], int(split[2])
 
-        if not check_plugin_exists(uuid, c.message):
+        if not check_plugin_exists(uuid, c.message): # type: ignore
             bot.answer_callback_query(c.id)
             return
 
@@ -107,7 +109,7 @@ def init_plugins_cp(cardinal: Cardinal, *args):
         split = c.data.split(":")
         uuid, offset = split[1], int(split[2])
 
-        if not check_plugin_exists(uuid, c.message):
+        if not check_plugin_exists(uuid, c.message): # type: ignore
             bot.answer_callback_query(c.id)
             return
 
@@ -117,78 +119,9 @@ def init_plugins_cp(cardinal: Cardinal, *args):
                       c.from_user.username, c.from_user.id, cardinal.plugins[uuid].name))
         open_edit_plugin_cp(c)
 
-    def ask_delete_plugin(c: CallbackQuery):
-        split = c.data.split(":")
-        uuid, offset = split[1], int(split[2])
-
-        if not check_plugin_exists(uuid, c.message):
-            bot.answer_callback_query(c.id)
-            return
-
-        bot.edit_message_reply_markup(c.message.chat.id, c.message.id,
-                                      reply_markup=keyboards.edit_plugin(cardinal, uuid, offset, True))
-        bot.answer_callback_query(c.id)
-
-    def cancel_delete_plugin(c: CallbackQuery):
-        split = c.data.split(":")
-        uuid, offset = split[1], int(split[2])
-
-        if not check_plugin_exists(uuid, c.message):
-            bot.answer_callback_query(c.id)
-            return
-
-        bot.edit_message_reply_markup(c.message.chat.id, c.message.id,
-                                      reply_markup=keyboards.edit_plugin(cardinal, uuid, offset))
-        bot.answer_callback_query(c.id)
-
-    def delete_plugin(c: CallbackQuery):
-        split = c.data.split(":")
-        uuid, offset = split[1], int(split[2])
-
-        if not check_plugin_exists(uuid, c.message):
-            bot.answer_callback_query(c.id)
-            return
-
-        if not os.path.exists(cardinal.plugins[uuid].path):
-            bot.answer_callback_query(c.id, _("pl_file_not_found_err", utils.escape(cardinal.plugins[uuid].path)),
-                                      show_alert=True)
-            return
-
-        if cardinal.plugins[uuid].delete_handler:
-            try:
-                cardinal.plugins[uuid].delete_handler(cardinal, c)
-            except:
-                logger.error(_("log_pl_delete_handler_err", cardinal.plugins[uuid].name))
-                logger.debug("TRACEBACK", exc_info=True)
-
-        os.remove(cardinal.plugins[uuid].path)
-        logger.info(_("log_pl_deleted", c.from_user.username, c.from_user.id, cardinal.plugins[uuid].name))
-        cardinal.plugins.pop(uuid)
-
-        c.data = f"{CBT.PLUGINS_LIST}:{offset}"
-        open_plugins_list(c)
-
-    def act_upload_plugin(obj: CallbackQuery | Message):
-        if isinstance(obj, CallbackQuery):
-            offset = int(obj.data.split(":")[1])
-            result = bot.send_message(obj.message.chat.id, _("pl_new"), reply_markup=CLEAR_STATE_BTN())
-            tg.set_state(obj.message.chat.id, result.id, obj.from_user.id, CBT.UPLOAD_PLUGIN, {"offset": offset})
-            bot.answer_callback_query(obj.id)
-        else:
-            result = bot.send_message(obj.chat.id, _("pl_new"), reply_markup=CLEAR_STATE_BTN())
-            tg.set_state(obj.chat.id, result.id, obj.from_user.id, CBT.UPLOAD_PLUGIN, {"offset": 0})
-
     tg.cbq_handler(open_plugins_list, lambda c: c.data.startswith(f"{CBT.PLUGINS_LIST}:"))
     tg.cbq_handler(open_edit_plugin_cp, lambda c: c.data.startswith(f"{CBT.EDIT_PLUGIN}:"))
     tg.cbq_handler(open_plugin_commands, lambda c: c.data.startswith(f"{CBT.PLUGIN_COMMANDS}:"))
     tg.cbq_handler(toggle_plugin, lambda c: c.data.startswith(f"{CBT.TOGGLE_PLUGIN}:"))
-
-    tg.cbq_handler(ask_delete_plugin, lambda c: c.data.startswith(f"{CBT.DELETE_PLUGIN}:"))
-    tg.cbq_handler(cancel_delete_plugin, lambda c: c.data.startswith(f"{CBT.CANCEL_DELETE_PLUGIN}:"))
-    tg.cbq_handler(delete_plugin, lambda c: c.data.startswith(f"{CBT.CONFIRM_DELETE_PLUGIN}:"))
-
-    tg.cbq_handler(act_upload_plugin, lambda c: c.data.startswith(f"{CBT.UPLOAD_PLUGIN}:"))
-    tg.msg_handler(act_upload_plugin, commands=["upload_plugin"])
-
 
 BIND_TO_PRE_INIT = [init_plugins_cp]

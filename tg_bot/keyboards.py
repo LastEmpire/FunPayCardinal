@@ -25,45 +25,6 @@ localizer = Localizer()
 _ = localizer.translate
 
 
-def power_off(instance_id: int, state: int) -> K:
-    """
-    Генерирует клавиатуру выключения бота (CBT.SHUT_DOWN:<state>:<instance_id>).
-
-    :param instance_id: ID запуска бота.
-    :param state: текущей этап клавиатуры.
-
-    :return: объект клавиатуры выключения бота.
-    """
-    kb = K()
-    if state == 0:
-        kb.row(B(_("gl_yes"), None, f"{CBT.SHUT_DOWN}:1:{instance_id}"),
-               B(_("gl_no"), None, CBT.CANCEL_SHUTTING_DOWN))
-    elif state == 1:
-        kb.row(B(_("gl_no"), None, CBT.CANCEL_SHUTTING_DOWN),
-               B(_("gl_yes"), None, f"{CBT.SHUT_DOWN}:2:{instance_id}"))
-    elif state == 2:
-        yes_button_num = random.randint(1, 10)
-        yes_button = B(_("gl_yes"), None, f"{CBT.SHUT_DOWN}:3:{instance_id}")
-        no_button = B(_("gl_no"), None, CBT.CANCEL_SHUTTING_DOWN)
-        buttons = [*[no_button] * (yes_button_num - 1), yes_button, *[no_button] * (10 - yes_button_num)]
-        kb.add(*buttons, row_width=2)
-    elif state == 3:
-        yes_button_num = random.randint(1, 30)
-        yes_button = B(_("gl_yes"), None, f"{CBT.SHUT_DOWN}:4:{instance_id}")
-        no_button = B(_("gl_no"), None, CBT.CANCEL_SHUTTING_DOWN)
-        buttons = [*[no_button] * (yes_button_num - 1), yes_button, *[no_button] * (30 - yes_button_num)]
-        kb.add(*buttons, row_width=5)
-    elif state == 4:
-        yes_button_num = random.randint(1, 40)
-        yes_button = B(_("gl_no"), None, f"{CBT.SHUT_DOWN}:5:{instance_id}")
-        no_button = B(_("gl_yes"), None, CBT.CANCEL_SHUTTING_DOWN)
-        buttons = [*[yes_button] * (yes_button_num - 1), no_button, *[yes_button] * (40 - yes_button_num)]
-        kb.add(*buttons, row_width=7)
-    elif state == 5:
-        kb.add(B(_("gl_yep"), None, f"{CBT.SHUT_DOWN}:6:{instance_id}"))
-    return kb
-
-
 def language_settings(c: Cardinal) -> K:
     lang = c.MAIN_CFG["Other"]["language"]
     langs = {
@@ -221,38 +182,6 @@ def authorized_user_settings(c: Cardinal, user_id: int, offset: int, user_link: 
     return kb
 
 
-def proxy(c: Cardinal, offset: int, proxies: dict[str, bool]):
-    """
-        Генерирует клавиатуру со списком прокси (CBT.PROXY:<offset>).
-
-        :param c: объект кардинала.
-        :param offset: смещение списка прокси.
-        :param proxies: {прокси: валидность прокси}.
-
-        :return: объект клавиатуры со списком прокси.
-        """
-    kb = K()
-    ps = list(c.proxy_dict.items())[offset: offset + MENU_CFG.PROXY_BTNS_AMOUNT]
-    ip, port = c.MAIN_CFG["Proxy"]["ip"], c.MAIN_CFG["Proxy"]["port"]
-    login, password = c.MAIN_CFG["Proxy"]["login"], c.MAIN_CFG["Proxy"]["password"]
-    now_proxy = f"{f'{login}:{password}@' if login and password else ''}{ip}:{port}"
-    kb.row(B(f"", callback_data=CBT.EMPTY))
-    for i, p in ps:
-        work = proxies.get(p)
-        e = "🟢" if work else "🟡" if work is None else "🔴"
-        if p == now_proxy:
-            b1 = B(f"{e}✅ {p}", callback_data=CBT.EMPTY)
-        else:
-            b1 = B(f"{e} {p}", callback_data=f"{CBT.CHOOSE_PROXY}:{offset}:{i}")
-        kb.row(b1, B("🗑️", callback_data=f"{CBT.DELETE_PROXY}:{offset}:{i}"))
-
-    kb = add_navigation_buttons(kb, offset, MENU_CFG.PROXY_BTNS_AMOUNT, len(ps),
-                                len(c.proxy_dict.items()), CBT.PROXY)
-    kb.row(B(_("prx_proxy_add"), None, f"{CBT.ADD_PROXY}:{offset}"))
-    kb.add(B(_("gl_back"), None, CBT.MAIN2))
-    return kb
-
-
 def review_reply_settings(c: Cardinal):
     """
     Генерирует клавиатуру настроек ответа на отзыв (CBT.CATEGORY:reviewReply).
@@ -299,27 +228,6 @@ def notifications_settings(c: Cardinal, chat_id: int) -> K:
         .add(B(_("ns_bot_start", l(n.bot_start)), None, f"{p}:{n.bot_start}")) \
         .add(B(_("ns_other", l(n.other)), None, f"{p}:{n.other}")) \
         .add(B(_("gl_back"), None, CBT.MAIN))
-    return kb
-
-
-def announcements_settings(c: Cardinal, chat_id: int):
-    """
-    Генерирует клавиатуру настроек уведомлений объявлений.
-
-    :param c: объект кардинала.
-    :param chat_id: ID чата, в котором вызвана клавиатура.
-
-    :return: объект клавиатуры настроек уведомлений объявлений.
-    """
-    p = f"{CBT.SWITCH_TG_NOTIFICATIONS}:{chat_id}"
-    n = NotificationTypes
-
-    def l(nt):
-        return '🔔' if c.telegram.is_notification_enabled(chat_id, nt) else '🔕'
-
-    kb = K() \
-        .add(B(_("an_an", l(n.announcement)), None, f"{p}:{n.announcement}")) \
-        .add(B(_("an_ad", l(n.ad)), None, f"{p}:{n.ad}"))
     return kb
 
 
@@ -715,7 +623,7 @@ def plugins_list(c: Cardinal, offset: int):
     return kb
 
 
-def edit_plugin(c: Cardinal, uuid: str, offset: int, ask_to_delete: bool = False):
+def edit_plugin(c: Cardinal, uuid: str, offset: int):
     """
     Генерирует клавиатуру управления плагином.
 
@@ -736,18 +644,10 @@ def edit_plugin(c: Cardinal, uuid: str, offset: int, ask_to_delete: bool = False
     if plugin_obj.settings_page:
         kb.add(B(_("pl_settings"), None, f"{CBT.PLUGIN_SETTINGS}:{uuid}:{offset}"))
 
-    if not ask_to_delete:
-        kb.add(B(_("gl_delete"), None, f"{CBT.DELETE_PLUGIN}:{uuid}:{offset}"))
-    else:
-        kb.row(B(_("gl_yes"), None, f"{CBT.CONFIRM_DELETE_PLUGIN}:{uuid}:{offset}"),
-               B(_("gl_no"), None, f"{CBT.CANCEL_DELETE_PLUGIN}:{uuid}:{offset}"))
     kb.add(B(_("gl_back"), None, f"{CBT.PLUGINS_LIST}:{offset}"))
     return kb
 
 
-def LINKS_KB(language: None | str = None) -> K:
+def links_kb(c: Cardinal, language: None | str = None) -> K:
     return K().add(B(_("lnk_github", language=language),
-                     url="https://github.com/sidor0912/FunPayCardinal")) \
-        .add(B(_("lnk_updates", language=language), url="https://t.me/fpc_updates")) \
-        .add(B(_("mm_plugins", language=language), url="https://t.me/fpc_plugins")) \
-        .add(B(_("lnk_chat", language=language), url="https://t.me/funpay_cardinal"))
+                     url=c.MAIN_CFG["Other"]["projectLink"])) \
