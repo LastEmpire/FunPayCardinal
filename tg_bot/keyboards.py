@@ -650,4 +650,4 @@ def edit_plugin(c: Cardinal, uuid: str, offset: int):
 
 def links_kb(c: Cardinal, language: None | str = None) -> K:
     return K().add(B(_("lnk_github", language=language),
-                     url=c.MAIN_CFG["Other"]["projectLink"])) \
+                     url=c.MAIN_CFG["Other"]["projectLink"]))

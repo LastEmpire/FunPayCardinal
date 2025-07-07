@@ -1012,7 +1012,7 @@ class TGBot:
             self.bot.set_my_short_description(sh_text)
         for i in [None, *localizer.languages.keys()]:
             res = self.bot.get_my_description(i).description
-            text = _("adv_description", self.cardinal.VERSION, self.cardinal.MAIN_CFG['Other']['projectLink'] language=i)
+            text = _("adv_description", self.cardinal.VERSION, self.cardinal.MAIN_CFG['Other']['projectLink'], language=i)
             if res != text:
                 self.bot.set_my_description(text, language_code=i)
 
