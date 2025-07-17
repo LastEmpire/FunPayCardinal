@@ -618,12 +618,13 @@ def plugins_list(c: Cardinal, offset: int):
     kb = add_navigation_buttons(kb, offset, MENU_CFG.PLUGINS_BTNS_AMOUNT, len(plugins),
                                 len(list(c.plugins.keys())), CBT.PLUGINS_LIST)
 
-    kb.add(B(_("pl_add"), None, f"{CBT.UPLOAD_PLUGIN}:{offset}")) \
+    project_link = c.MAIN_CFG["Other"]["projectLink"]
+    kb.add(B(_("pl_add"), project_link)) \
         .add(B(_("gl_back"), None, CBT.MAIN))
     return kb
 
 
-def edit_plugin(c: Cardinal, uuid: str, offset: int):
+def edit_plugin(c: Cardinal, uuid: str, offset: int, *args, **kwargs) -> K:
     """
     Генерирует клавиатуру управления плагином.
 
