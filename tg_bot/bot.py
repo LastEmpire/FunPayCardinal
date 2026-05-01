@@ -530,6 +530,7 @@ class TGBot:
                     else:
                         self.bot.send_message(m.chat.id, "<b>Ошибок в последнем лог-файле не обнаружено.</b>")  # locale
             except:
+                logger.warning("Не удалось отправить лог-файл")
                 logger.debug("TRACEBACK", exc_info=True)
                 self.bot.send_message(m.chat.id, _("logfile_error"))
 
@@ -578,8 +579,14 @@ class TGBot:
             with open(file_path := "backup.zip", 'rb') as file:
                 modification_time = os.path.getmtime(file_path)
                 formatted_time = time.strftime('%d.%m.%Y %H:%M:%S', time.localtime(modification_time))
-                self.bot.send_document(chat_id=m.chat.id, document=InputFile(file),
-                                       caption=f'{_("update_backup")}\n\n{formatted_time}')
+                try:
+                    self.bot.send_document(chat_id=m.chat.id, document=InputFile(file),
+                                           caption=f'{_("update_backup")}\n\n{formatted_time}')
+                except:
+                    logger.warning("Не удалось отправить бэкап")
+                    logger.debug("TRACEBACK", exc_info=True)
+                    self.bot.send_message(m.chat.id, _("update_backup_send_error"))
+
         else:
             self.bot.send_message(m.chat.id, _("update_backup_not_found"))
 
@@ -720,7 +727,7 @@ class TGBot:
 
     def act_upload_backup(self, m: Message):
         """
-        Активирует режим ожидания бекапа.
+        Активирует режим ожидания бэкапа.
         """
         result = self.bot.send_message(m.chat.id, _("send_backup"), reply_markup=skb.CLEAR_STATE_BTN())
         self.set_state(m.chat.id, result.id, m.from_user.id, CBT.UPLOAD_BACKUP)

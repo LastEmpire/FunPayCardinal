@@ -167,10 +167,16 @@ def load_proxy_dict() -> dict[int, str]:
 
         try:
             proxy = json.loads(proxy)
-            proxy = {int(k): v for k, v in proxy.items()}
+            proxy_dict = {}
+            for id_, proxy_str in proxy.items():
+                try:
+                    proxy_dict[int(id_)] = build_proxy(*validate_proxy(proxy_str))
+                except:
+                    logger.debug(f"Не удалось добавить {proxy_str}")
+                    logger.debug("TRACEBACK", exc_info=True)
         except json.decoder.JSONDecodeError:
             return {}
-        return proxy
+        return proxy_dict
 
 
 def cache_disabled_plugins(disabled_plugins: list[str]) -> None:
