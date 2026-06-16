@@ -324,29 +324,24 @@ class Cardinal(object):
             time_delta = ""
             try:
                 time.sleep(1)
-                self.account.raise_lots(subcat.category.id)
+                wait_time = self.account.raise_lots(subcat.category.id)
                 logger.info(_("crd_lots_raised", subcat.category.name))
                 raise_ok = True
                 last_time = self.raised_time.get(subcat.category.id)
                 self.raised_time[subcat.category.id] = new_time = int(time.time())  # locale
                 time_delta = "" if not last_time else f" Последнее поднятие: {cardinal_tools.time_to_str(new_time - last_time)} назад."
-                time.sleep(1)
-                self.account.raise_lots(subcat.category.id)
+                error_text = f"Подождите {cardinal_tools.time_to_str(wait_time)}."
             except FunPayAPI.exceptions.RaiseError as e:
                 if e.error_message is not None:
                     error_text = e.error_message
                 if e.wait_time is not None:
                     logger.warning(_("crd_raise_time_err", subcat.category.name, error_text,
                                      cardinal_tools.time_to_str(e.wait_time)))
-                    next_time = int(time.time()) + e.wait_time
+                    wait_time = e.wait_time
                 else:
                     logger.error(_("crd_raise_unexpected_err", subcat.category.name))
                     time.sleep(10)
-                    next_time = int(time.time()) + 1
-                self.raise_time[subcat.category.id] = next_time
-                next_call = next_time if next_time < next_call else next_call
-                if not raise_ok:
-                    continue
+                    wait_time = 1
             except Exception as e:
                 t = 10
                 if isinstance(e, FunPayAPI.exceptions.RequestFailedError) and e.status_code in (503, 403, 429):
@@ -356,11 +351,12 @@ class Cardinal(object):
                     logger.error(_("crd_raise_unexpected_err", subcat.category.name))
                 logger.debug("TRACEBACK", exc_info=True)
                 time.sleep(t)
-                next_time = int(time.time()) + 1
-                next_call = next_time if next_time < next_call else next_call
-                if not raise_ok:
-                    continue
-            self.run_handlers(self.post_lots_raise_handlers, (self, subcat.category, error_text + time_delta))
+                wait_time = 1
+            next_time = time.time() + wait_time + 1
+            self.raise_time[subcat.category.id] = next_time
+            next_call = next_time if next_time < next_call else next_call
+            if raise_ok:
+                self.run_handlers(self.post_lots_raise_handlers, (self, subcat.category, error_text + time_delta))
         return next_call if next_call < float("inf") else 10
 
     def get_order_from_object(self, obj: types.OrderShortcut | types.Message | types.ChatShortcut,
