@@ -5,6 +5,8 @@ gl_yes = "✅ Yes"
 gl_yep = "✅ yep"
 gl_no = "❌ No"
 gl_cancel = "❌ Cancel"
+gl_on = "🟢 Enabled"
+gl_off = "🔴 Disabled"
 gl_error = "⚠️ Error"
 gl_try_again = "Try again"
 gl_error_try_again = f"{gl_error}. {gl_try_again}."
@@ -114,6 +116,7 @@ tmplt_add_another = "➕ Add another"
 # Greeting settings
 gr_greetings = "{} Greet users"
 gr_ignore_sys_msgs = "{} Ignore system messages"
+gr_only_new_chats = "{} Only in new chats"
 gr_edit_message = "✏️ Change the text of the welcome message"
 gr_edit_cooldown = "⏱️ Cooldown: {} days"
 
@@ -135,8 +138,11 @@ mv_show_image_name = "{} Show image names"
 pl_add = "➕ Add plugin"
 pl_activate = "Activate"
 pl_deactivate = "Deactivate"
+pl_pin = "Pin"
+pl_unpin = "Unpin"
 pl_commands = "⌨️ Commands"
 pl_settings = "⚙️ Settings"
+pl_buy = "💸 Buy plugin"
 
 # Configs
 cfg_download_main = "⤵️ Download main config"
@@ -253,12 +259,19 @@ proxy_format = "❌ Proxies must be in the format <u>login:password@ip:port</u> 
 proxy_adding_error = "❌ There was an error while adding the proxy."
 proxy_undeletable = "❌ This proxy cannot be deleted as it is currently in use."
 
-act_edit_watermark = "Enter a new watermark text. For example:\n{}\n<code>𝑭𝒖𝒏𝑷𝒂𝒚 𝑪𝒂𝒓𝒅𝒊𝒏𝒂𝒍</code>\n" \
-                     "<code>FunPay Cardinal</code>\n<code>[FunPay / Cardinal]</code>\n<code>𝑭𝑷𝑪</code>\n" \
-                     "<code>FPC</code>\n<code>🤖</code>\n<code>🐦</code>\n\n" \
-                     "You can copy examples by clicking and edit them as you like.\nKeep in mind that on FunPay, the emoji " \
-                     "🐦 looks different from Telegram." \
-                     "\n\nIf you want to remove the watermark, send <code>-</code>."
+act_edit_watermark = "Enter a new watermark text. For example:\n{}\n" \
+                     "<code>𝓕𝓾𝓷𝓟𝓪𝔂 𝓒𝓪𝓻𝓭𝓲𝓷𝓪𝓵</code>\n" \
+                     "<code>𝔽𝕦𝕟ℙ𝕒𝕪 ℂ𝕒𝕣𝕕𝕚𝕟𝕒𝕝</code>\n<code>ＦｕｎＰａｙ Ｃａｒｄｉｎａｌ</code>\n" \
+                     "<code>ꜰᴜɴᴘᴀʏ ᴄᴀʀᴅɪɴᴀʟ</code>\n<code>🄵🅄🄽🄿🄰🅈 🄲🄰🅁🄳🄸🄽🄰🄻</code>\n" \
+                     "<code>ⒻⓤⓝⓅⓐⓨ Ⓒⓐⓡⓓⓘⓝⓐⓛ</code>\n<code>𝐅𝐮𝐧𝐏𝐚𝐲 𝐂𝐚𝐫𝐝𝐢𝐧𝐚𝐥</code>\n" \
+                     "<code>𝗙𝘂𝗻𝗣𝗮𝘆 𝗖𝗮𝗿𝗱𝗶𝗻𝗮𝗹</code>\n<code>𝘍𝘶𝘯𝘗𝘢𝘺 𝘊𝘢𝘳𝘥𝘪𝘯𝘢𝘭</code>\n" \
+                     "<code>𝙁𝙪𝙣𝙋𝙖𝙮 𝘾𝙖𝙧𝙙𝙞𝙣𝙖𝙡</code>\n<code>𝙵𝚞𝚗𝙿𝚊𝚢 𝙲𝚊𝚛𝚍𝚒𝚗𝚊𝚕</code>\n" \
+                     "<code>ᖴᑌᑎᑭᗩY ᑕᗩᖇᗪIᑎᗩᒪ</code>\n" \
+                     "<code>FunPay Cardinal</code>\n<code>[FunPay / Cardinal]</code>\n" \
+                     "<code>🤖</code>\n<code>🐦</code>\n\n" \
+                     "You can tap on the examples to copy and edit them to your liking.\nNote that on FunPay, the emoji " \
+                     "🐦 looks different than in Telegram." \
+                     "\n\nTo remove the watermark, send <code>-</code>."
 watermark_changed = "✅ The message watermark has been changed."
 watermark_deleted = "✅ The message watermark has been deleted."
 watermark_error = "❌ Invalid watermark."
@@ -276,6 +289,7 @@ update_update = "To update, enter the command /update"
 update_backup = "✅ Backup of configs, storage and plugins <code>backup.zip</code>.\n\n" \
                 "⚠️ DO NOT SEND this archive to ANYONE. It contains ABSOLUTELY ALL content and settings of the bot (including golden_key and product files)."
 update_backup_error = "❌ Failed to back up configs, storage and plugins."
+update_backup_send_error = "❌ Failed to send the backup."
 update_backup_not_found = "❌ Backup not found."
 update_downloaded = "✅ The update {} is downloaded (skipped {} items). Installing..."
 update_download_error = "❌ An error occurred while downloading the update."
@@ -283,6 +297,8 @@ update_done = "✅ The update is installed! Restart the FPC with the /restart co
 update_done_exe = "✅ The update is installed! New <code>FPC.exe</code> is in <code>update</code> folder. " \
                   "Turn off <i>FPC</i>, replace old <code>FPC.exe</code> with new one and run <code>Start.bat</code>. "
 update_install_error = "❌ An error occurred while installing the update."
+
+send_backup = "Send me the backup.\n\n<b>⚠️ WARNING! Uploading backups from untrusted sources may lead to serious consequences.</b>"
 
 restarting = "Restarting..."
 power_off_0 = """<b><u>Are you sure you want to turn me off?</u></b>\n
@@ -464,6 +480,7 @@ cmd_update = "upgrade to the next version"
 cmd_sys = "system load information"
 cmd_create_backup = "create backup"
 cmd_get_backup = "get backup"
+cmd_upload_backup = "upload backup"
 cmd_restart = "restart FPC"
 cmd_power_off = "shutdown FPC"
 

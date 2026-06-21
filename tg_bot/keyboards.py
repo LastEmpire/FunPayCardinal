@@ -65,8 +65,9 @@ def main_settings(c: Cardinal) -> K:
              B(_("gs_autodisable", l('autoDisable')), None, f"{p}:autoDisable")) \
         .row(B(_("gs_old_msg_mode", l('oldMsgGetMode')), None, f"{p}:oldMsgGetMode"),
              B(f"❔", None, f"{CBT.OLD_MOD_HELP}"))
-
-    kb = kb.add(B(_("gs_keep_sent_messages_unread", l('keepSentMessagesUnread')), None, f"{p}:keepSentMessagesUnread"))
+    if c.old_mode_enabled:
+        kb = kb.add(B(_("gs_keep_sent_messages_unread", l('keepSentMessagesUnread')),
+                      None, f"{p}:keepSentMessagesUnread"))
     kb = kb.add(B(_("gl_back"), None, CBT.MAIN))
     return kb
 
@@ -111,12 +112,16 @@ def greeting_settings(c: Cardinal):
 
     cd = float(c.MAIN_CFG["Greetings"]["greetingsCooldown"])
     cd = int(cd) if int(cd) == cd else cd
+    only_new_chats = c.MAIN_CFG["Greetings"].getboolean("onlyNewChats")
     kb = K() \
         .add(B(_("gr_greetings", l("sendGreetings")), None, f"{p}:sendGreetings")) \
         .add(B(_("gr_ignore_sys_msgs", l("ignoreSystemMessages")), None, f"{p}:ignoreSystemMessages")) \
-        .add(B(_("gr_edit_message"), None, CBT.EDIT_GREETINGS_TEXT)) \
-        .add(B(_("gr_edit_cooldown").format(cd), None, CBT.EDIT_GREETINGS_COOLDOWN)) \
-        .add(B(_("gl_back"), None, CBT.MAIN2))
+        .add(B(_("gr_only_new_chats", l("onlyNewChats")), None, f"{p}:onlyNewChats")) \
+        .add(B(_("gr_edit_message"), None, CBT.EDIT_GREETINGS_TEXT))
+    if not only_new_chats:
+        kb.add(B(_("gr_edit_cooldown").format(cd), None, CBT.EDIT_GREETINGS_COOLDOWN))
+
+    kb.add(B(_("gl_back"), None, CBT.MAIN2))
     return kb
 
 
@@ -272,7 +277,7 @@ def commands_list(c: Cardinal, offset: int) -> K:
 
     for index, cmd in enumerate(commands):
         #  CBT.EDIT_CMD:номер команды:смещение (для кнопки назад)
-        kb.add(B(cmd, None, f"{CBT.EDIT_CMD}:{offset + index}:{offset}"))
+        kb.add(B(f"{bool_to_text(c.RAW_AR_CFG.get(cmd, 'enabled'))} {cmd}", None, f"{CBT.EDIT_CMD}:{offset + index}:{offset}"))
 
     kb = add_navigation_buttons(kb, offset, MENU_CFG.AR_BTNS_AMOUNT, len(commands), len(c.RAW_AR_CFG.sections()),
                                 CBT.CMD_LIST)
@@ -295,10 +300,12 @@ def edit_command(c: Cardinal, command_index: int, offset: int) -> K:
     command = c.RAW_AR_CFG.sections()[command_index]
     command_obj = c.RAW_AR_CFG[command]
     kb = K() \
+        .add(B(_("{}", bool_to_text(command_obj.get('enabled'), _("gl_on"), _("gl_off"))),
+               None, f"{CBT.SWITCH_CMD_SETTING}:{command_index}:{offset}:enabled")) \
         .add(B(_("ar_edit_response"), None, f"{CBT.EDIT_CMD_RESPONSE_TEXT}:{command_index}:{offset}")) \
         .add(B(_("ar_edit_notification"), None, f"{CBT.EDIT_CMD_NOTIFICATION_TEXT}:{command_index}:{offset}")) \
         .add(B(_("ar_notification", bool_to_text(command_obj.get('telegramNotification'), '🔔', '🔕')),
-               None, f"{CBT.SWITCH_CMD_NOTIFICATION}:{command_index}:{offset}")) \
+               None, f"{CBT.SWITCH_CMD_SETTING}:{command_index}:{offset}:telegramNotification")) \
         .add(B(_("gl_delete"), None, f"{CBT.DEL_CMD}:{command_index}:{offset}")) \
         .row(B(_("gl_back"), None, f"{CBT.CMD_LIST}:{offset}"),
              B(_("gl_refresh"), None, f"{CBT.EDIT_CMD}:{command_index}:{offset}"))
@@ -604,15 +611,16 @@ def plugins_list(c: Cardinal, offset: int):
     :return: объект клавиатуры со списком плагинов.
     """
     kb = K()
-    plugins = list(sorted(c.plugins.keys(), key=lambda x: c.plugins[x].name.lower()))[
+    plugins = list(sorted(c.plugins.keys(), key=lambda x: (not c.plugins[x].pinned, c.plugins[x].name.lower())))[
               offset: offset + MENU_CFG.PLUGINS_BTNS_AMOUNT]
     if not plugins and offset != 0:
         offset = 0
         plugins = list(c.plugins.keys())[offset: offset + MENU_CFG.PLUGINS_BTNS_AMOUNT]
 
     for uuid in plugins:
+        e = "📌 " if c.plugins[uuid].pinned else ""
         #  CBT.EDIT_PLUGIN:uuid плагина:смещение (для кнопки назад)
-        kb.add(B(f"{c.plugins[uuid].name} {bool_to_text(c.plugins[uuid].enabled)}",
+        kb.add(B(f"{e}{c.plugins[uuid].name} {bool_to_text(c.plugins[uuid].enabled)}",
                  None, f"{CBT.EDIT_PLUGIN}:{uuid}:{offset}"))
 
     kb = add_navigation_buttons(kb, offset, MENU_CFG.PLUGINS_BTNS_AMOUNT, len(plugins),
@@ -637,9 +645,10 @@ def edit_plugin(c: Cardinal, uuid: str, offset: int, *args, **kwargs) -> K:
     """
     plugin_obj = c.plugins[uuid]
     kb = K()
-    active_text = _("pl_deactivate") if c.plugins[uuid].enabled else _("pl_activate")
+    active_text = _("pl_deactivate") if plugin_obj.enabled else _("pl_activate")
     kb.add(B(active_text, None, f"{CBT.TOGGLE_PLUGIN}:{uuid}:{offset}"))
-
+    pin_text = _("pl_unpin") if plugin_obj.pinned else _("pl_pin")
+    kb.add(B(pin_text, None, f"{CBT.PIN_PLUGIN}:{uuid}:{offset}"))
     if plugin_obj.commands:
         kb.add(B(_("pl_commands"), None, f"{CBT.PLUGIN_COMMANDS}:{uuid}:{offset}"))
     if plugin_obj.settings_page:

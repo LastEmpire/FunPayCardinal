@@ -93,10 +93,10 @@ command_index: int - числовой индекс команды.
 offset: int - смещение списка команд.
 """
 
-SWITCH_CMD_NOTIFICATION = "9"
+SWITCH_CMD_SETTING = "9"
 """
 Callback для вкл/выкл Telegram уведомления об использовании команды.
-Использование: CBT.SWITCH_CMD_NOTIFICATION:command_index:offset
+Использование: CBT.SWITCH_CMD_SETTING:command_index:offset:setting
 
 command_index: int - числовой индекс команды.
 offset: int - смещение списка команд.
@@ -425,6 +425,11 @@ UPLOAD_OFFER_IMAGE = "upload_offer_image"
 User-state: ожидается сообщение с изображением для выгрузки на сервер FunPay (лот).
 """
 
+UPLOAD_BACKUP = "upload_backup"
+"""
+User-state: ожидается сообщение с бэкапом.
+"""
+
 UPDATE_PROFILE = "39"
 """
 Callback для обновления статистики аккаунта.
@@ -693,4 +698,13 @@ Callback для удаления прокси.
 
 offset: int - смещение списка прокси.
 proxy_id: int - ID proxy
+"""
+
+PIN_PLUGIN = "73"
+"""
+Callback для закрепления плагина в списке плагинов.
+Использование: CBT.PIN_PLUGIN:UUID:offset
+
+UUID: str - UUID плагина.
+offset: int - смещение списка плагинов.
 """
