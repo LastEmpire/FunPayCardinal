@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from cardinal import Cardinal
     from tg_bot.bot import TGBot
 
-from Utils import config_loader as cfg_loader, exceptions as excs, cardinal_tools, updater
+from Utils import config_loader as cfg_loader, exceptions as excs, cardinal_tools
 from telebot.types import InlineKeyboardButton as Button
 from tg_bot import utils, keyboards, CBT
 from tg_bot.static_keyboards import CLEAR_STATE_BTN
